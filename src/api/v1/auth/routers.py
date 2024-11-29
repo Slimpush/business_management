@@ -1,20 +1,16 @@
 from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import EmailStr
-from schemas.schemas import (
-    ConfirmRegistrationRequest,
-    ConfirmRegistrationResponse,
-    SignUpRequestSchema,
-    SignUpResponseSchema,
-    CompleteSignUpRequest,
-    CompleteSignUpResponse,
-    CheckAccountResponse,
-    SignInRequestSchema,
-    TokenInfo,
-    UserToken,
-    UserUpdateRequest,
-)
+
+from schemas.schemas import (CheckAccountResponse, CompleteSignUpRequest,
+                             CompleteSignUpResponse,
+                             ConfirmRegistrationRequest,
+                             ConfirmRegistrationResponse, SignInRequestSchema,
+                             SignUpRequestSchema, SignUpResponseSchema,
+                             TokenInfo, UserToken, UserUpdateRequest)
 from utils.utils import get_current_user
+
 from .services import AuthService
 
 router = APIRouter()

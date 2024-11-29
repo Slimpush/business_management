@@ -1,10 +1,12 @@
 import asyncio
-from logging.config import fileConfig
 import os
-from sqlalchemy.ext.asyncio import create_async_engine
+from logging.config import fileConfig
+
 from alembic import context
-from src.models.models import Base
 from dotenv import load_dotenv
+from sqlalchemy.ext.asyncio import create_async_engine
+
+from src.models.models import Base
 
 # Загрузка переменных окружения
 load_dotenv()

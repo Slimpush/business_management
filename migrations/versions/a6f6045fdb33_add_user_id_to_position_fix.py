@@ -1,16 +1,17 @@
-"""Initial migration
+"""Add user_id to position fix
 
-Revision ID: af7ff7983b34
-Revises: 7cf2cad11883
-Create Date: 2024-11-21 20:11:39.330426
+Revision ID: a6f6045fdb33
+Revises: 45739a8fb9da
+Create Date: 2024-11-28 16:52:28.788620
 
 """
 
 from typing import Sequence, Union
 
+
 # revision identifiers, used by Alembic.
-revision: str = "af7ff7983b34"
-down_revision: Union[str, None] = "7cf2cad11883"
+revision: str = "a6f6045fdb33"
+down_revision: Union[str, None] = "45739a8fb9da"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

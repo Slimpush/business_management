@@ -1,13 +1,14 @@
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Union
-import uuid
-from fastapi import Depends, HTTPException
-from jose import jwt
-import bcrypt
-from settings import settings
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from schemas.schemas import UserToken
 
+import bcrypt
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import jwt
+
+from schemas.schemas import UserToken
+from settings import settings
 
 http_bearer = HTTPBearer()
 

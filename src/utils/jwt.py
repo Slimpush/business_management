@@ -1,10 +1,13 @@
 import re
-from fastapi import Request, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+
+from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
-from .utils import decode_jwt
+from fastapi.security import OAuth2PasswordBearer
+
 from repository.user_repository import UserRepository
+
 from .unit_of_work import UnitOfWork
+from .utils import decode_jwt
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/sign-in")
 

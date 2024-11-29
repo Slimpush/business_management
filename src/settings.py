@@ -1,8 +1,8 @@
-from pydantic_settings import BaseSettings
 from pathlib import Path
+
 from dotenv import load_dotenv
 from pydantic import computed_field
-
+from pydantic_settings import BaseSettings
 
 load_dotenv()
 
@@ -15,7 +15,7 @@ class AuthJWT:
         Path(__file__).parent / "utils" / "certs" / "public.pem"
     )
     algorithm: str = "RS256"
-    access_token_expire_minutes: int = 15
+    access_token_expire_minutes: int = 600
 
 
 class Settings(BaseSettings):

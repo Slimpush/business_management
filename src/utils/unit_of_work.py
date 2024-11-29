@@ -2,14 +2,16 @@ import functools
 from abc import ABC, abstractmethod
 from types import TracebackType
 from typing import Any, NoReturn, Optional
+
 from sqlalchemy.orm import sessionmaker
+
 from database.db import async_session_maker
-from repository.user_repository import (
-    CompanyRepository,
-    InviteRepository,
-    UserRepository,
-    PositionRepository,
-)
+from repository.user_repository import (CompanyRepository, InviteRepository,
+                                        PositionRepository,
+                                        RoleAssignmentRepository,
+                                        UserRepository)
+from utils.repository import DepartmentRepository
+
 from .custom_type import AsyncFunc
 
 
@@ -55,6 +57,8 @@ class UnitOfWork(AbstractUnitOfWork):
         self.company = CompanyRepository(self.session)
         self.position = PositionRepository(self.session)
         self.invite = InviteRepository(self.session)
+        self.department = DepartmentRepository(self.session)
+        self.role_assignment = RoleAssignmentRepository(self.session)
 
     async def __aexit__(
         self,

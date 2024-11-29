@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Sequence
 
-from sqlalchemy import insert, select, delete
+from sqlalchemy import delete, insert, select
 from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -106,3 +106,11 @@ class SQLAlchemyBaseRepository(AbstractRepository):
 
     async def get_by_id(self, obj_id: int) -> Optional[Any]:
         return await self.session.get(self.model, obj_id)
+
+    async def delete_one_by_id(self, obj_id: int) -> None:
+        obj = await self.session.get(self.model, obj_id)
+        if obj is None:
+            raise ValueError(f"Object with id {obj_id} does not exist.")
+
+        await self.session.delete(obj)
+        await self.session.commit()

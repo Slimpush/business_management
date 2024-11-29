@@ -1,46 +1,39 @@
 from datetime import datetime, timezone
 from typing import Optional
+
 from fastapi import HTTPException
 from pydantic import EmailStr
-from schemas.schemas import (
-    ConfirmRegistrationRequest,
-    ConfirmRegistrationResponse,
-    SignUpRequestSchema,
-    SignUpResponseSchema,
-    CompleteSignUpRequest,
-    CompleteSignUpResponse,
-    CheckAccountResponse,
-    SignInRequestSchema,
-    TokenInfo,
-    UserUpdateRequest,
-)
+
+from schemas.schemas import (CheckAccountResponse, CompleteSignUpRequest,
+                             CompleteSignUpResponse,
+                             ConfirmRegistrationRequest,
+                             ConfirmRegistrationResponse, SignInRequestSchema,
+                             SignUpRequestSchema, SignUpResponseSchema,
+                             TokenInfo, UserUpdateRequest)
 from utils.service import BaseService
-from utils.utils import (
-    generate_invite_token,
-    encode_jwt,
-    hash_password,
-    validate_password,
-)
 from utils.unit_of_work import transaction_mode
+from utils.utils import (encode_jwt, generate_invite_token, hash_password,
+                         validate_password)
 
 
 class AuthService(BaseService):
     @transaction_mode
-    async def check_account(
-        self, account: EmailStr
-    ) -> CheckAccountResponse:
-        user_exists = await self.uow.user.get_by_query_one_or_none(
-            email=account
-        )
+    async def check_account(self, account: EmailStr) -> CheckAccountResponse:
+        user_exists = await self.uow.user.get_by_query_one_or_none(email=account)
         if user_exists:
-            raise HTTPException(
-                status_code=400,
-                detail="Email already in use.",
-            )
+            raise HTTPException(status_code=400, detail="Email already in use.")
 
-        invite = await self.uow.invite.get_by_query_one_or_none(
-            email=account
+        default_company = await self.uow.company.get_by_query_one_or_none(
+            name="Default Company"
         )
+        if not default_company:
+            default_company_id = await self.uow.company.add_one_and_get_id(
+                name="Default Company"
+            )
+        else:
+            default_company_id = default_company.id
+
+        invite = await self.uow.invite.get_by_query_one_or_none(email=account)
         invite_token = invite.token if invite else generate_invite_token()
 
         if invite and not invite.is_verified:
@@ -52,6 +45,7 @@ class AuthService(BaseService):
             await self.uow.invite.add_one(
                 email=account,
                 token=invite_token,
+                company_id=default_company_id,
             )
 
         return CheckAccountResponse(
@@ -61,21 +55,15 @@ class AuthService(BaseService):
         )
 
     @transaction_mode
-    async def sign_up(
-        self, schema: SignUpRequestSchema
-    ) -> SignUpResponseSchema:
-        invite = await self.uow.invite.get_by_query_one_or_none(
-            email=schema.account
-        )
+    async def sign_up(self, schema: SignUpRequestSchema) -> SignUpResponseSchema:
+        invite = await self.uow.invite.get_by_query_one_or_none(email=schema.account)
         if not invite or invite.token != schema.token:
             raise HTTPException(
                 status_code=400,
                 detail="Invalid or missing verification code.",
             )
 
-        await self.uow.invite.update_one_by_id(
-            obj_id=invite.id, is_verified=True
-        )
+        await self.uow.invite.update_one_by_id(obj_id=invite.id, is_verified=True)
         return SignUpResponseSchema(
             message="Account successfully verified.",
             account=schema.account,
@@ -85,9 +73,7 @@ class AuthService(BaseService):
     async def sign_up_complete(
         self, schema: CompleteSignUpRequest
     ) -> CompleteSignUpResponse:
-        invite = await self.uow.invite.get_by_query_one_or_none(
-            email=schema.account
-        )
+        invite = await self.uow.invite.get_by_query_one_or_none(email=schema.account)
         if not invite or not invite.is_verified:
             raise HTTPException(
                 status_code=400,
@@ -104,9 +90,7 @@ class AuthService(BaseService):
             )
 
         hashed_password = hash_password(schema.password)
-        company_id = await self.uow.company.add_one_and_get_id(
-            name=schema.company_name
-        )
+        company_id = await self.uow.company.add_one_and_get_id(name=schema.company_name)
         user_data = {
             "email": schema.account,
             "first_name": schema.first_name,
@@ -175,13 +159,9 @@ class AuthService(BaseService):
 
         if invite:
             if invite.is_verified:
-                raise HTTPException(
-                    status_code=400, detail="User already verified."
-                )
+                raise HTTPException(status_code=400, detail="User already verified.")
             invite_token = generate_invite_token()
-            await self.uow.invite.update_one_by_id(
-                obj_id=invite.id, token=invite_token
-            )
+            await self.uow.invite.update_one_by_id(obj_id=invite.id, token=invite_token)
         else:
             invite_token = generate_invite_token()
             await self.uow.invite.add_one(
@@ -215,9 +195,7 @@ class AuthService(BaseService):
     async def update_email(self, user_id: int, new_email: EmailStr) -> dict:
         existing_user = await self.uow.user.get_by_query_one_or_none(email=new_email)
         if existing_user:
-            raise HTTPException(
-                status_code=400, detail="Email already in use."
-            )
+            raise HTTPException(status_code=400, detail="Email already in use.")
 
         await self.uow.user.update_one_by_id(obj_id=user_id, email=new_email)
         return {"message": "Email updated successfully."}
@@ -241,11 +219,13 @@ class AuthService(BaseService):
 
         invite_token = generate_invite_token()
 
+        temp_password = hash_password("temporary_password")
+
         await self.uow.user.add_one(
             email=email,
             first_name=first_name,
             last_name=last_name,
-            hashed_password=None,
+            hashed_password=temp_password,
             is_admin=False,
             is_active=False,
             company_id=company_id,
@@ -269,9 +249,7 @@ class AuthService(BaseService):
         if not invite:
             raise HTTPException(status_code=404, detail="Invite not found.")
         if invite.token != schema.token:
-            raise HTTPException(
-                status_code=400, detail="Invalid invite token."
-            )
+            raise HTTPException(status_code=400, detail="Invalid invite token.")
         if invite.is_verified:
             raise HTTPException(status_code=400, detail="Invite already used.")
 
@@ -285,9 +263,7 @@ class AuthService(BaseService):
             hashed_password=hashed_password,
             is_active=True,
         )
-        await self.uow.invite.update_one_by_id(
-            obj_id=invite.id, is_verified=True
-        )
+        await self.uow.invite.update_one_by_id(obj_id=invite.id, is_verified=True)
 
         return ConfirmRegistrationResponse(
             message="Registration completed successfully."

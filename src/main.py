@@ -1,7 +1,10 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+
 import uvicorn
+from fastapi import FastAPI
+
 from api.v1.auth.routers import router
+from api.v1.department.routers import router as d_router
 from utils.jwt import auth_middleware
 
 
@@ -14,6 +17,7 @@ app = FastAPI(lifespan=lifespan)
 
 
 app.include_router(router, prefix="/auth", tags=["auth"])
+app.include_router(d_router, prefix="/dep", tags=["dep"])
 app.middleware("http")(auth_middleware)
 
 

@@ -1,7 +1,7 @@
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy import inspect, text
 from sqlalchemy.engine import Connection
 
