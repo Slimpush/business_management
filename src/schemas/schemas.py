@@ -1,6 +1,8 @@
-from typing import Optional
+from typing import List, Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+
+from models.models import TaskStatus
 
 
 class CheckAccountResponse(BaseModel):
@@ -68,3 +70,76 @@ class ConfirmRegistrationRequest(BaseModel):
 
 class ConfirmRegistrationResponse(BaseModel):
     message: str
+
+
+class DepartmentBase(BaseModel):
+    name: str
+    company_id: int
+    parent_path: Optional[str] = None
+
+
+class DepartmentCreate(DepartmentBase):
+    pass
+
+
+class DepartmentUpdate(BaseModel):
+    name: Optional[str] = None
+    parent_path: Optional[str] = None
+
+
+class DepartmentResponse(BaseModel):
+    id: int
+    name: str
+    company_id: int
+    path: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class TaskBase(BaseModel):
+    title: str
+    description: Optional[str] = None
+    responsible_id: int
+    observer_ids: List[int]
+    executor_ids: List[int]
+    deadline: Optional[str] = None
+    estimated_time: Optional[float] = None
+
+
+class TaskCreate(BaseModel):
+    title: str
+    description: Optional[str]
+    responsible_id: int
+    observer_ids: List[int]
+    executor_ids: List[int]
+    deadline: Optional[str]
+    estimated_time: Optional[float]
+    status: Optional[TaskStatus] = TaskStatus.NEW
+
+    @field_validator("status", mode="before")
+    def normalize_status(cls, value):
+        if isinstance(value, str):
+            value = value.title()
+        return TaskStatus(value)
+
+
+class TaskUpdate(BaseModel):
+    title: Optional[str]
+    description: Optional[str]
+    status: Optional[TaskStatus]
+    deadline: Optional[str]
+    estimated_time: Optional[float]
+
+
+class TaskResponse(BaseModel):
+    id: int
+    title: str
+    description: Optional[str] = None
+    responsible_id: int
+    observer_ids: List[int]
+    executor_ids: List[int]
+    deadline: Optional[str] = None
+    estimated_time: Optional[float] = None
+    status: TaskStatus
+
+    model_config = ConfigDict(from_attributes=True)

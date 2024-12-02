@@ -5,6 +5,7 @@ from fastapi import FastAPI
 
 from api.v1.auth.routers import router
 from api.v1.department.routers import router as d_router
+from api.v1.tasks.routers import router as t_router
 from utils.jwt import auth_middleware
 
 
@@ -18,6 +19,7 @@ app = FastAPI(lifespan=lifespan)
 
 app.include_router(router, prefix="/auth", tags=["auth"])
 app.include_router(d_router, prefix="/dep", tags=["dep"])
+app.include_router(t_router, prefix="/tasks", tags=["tasks"])
 app.middleware("http")(auth_middleware)
 
 

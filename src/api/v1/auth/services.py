@@ -4,16 +4,26 @@ from typing import Optional
 from fastapi import HTTPException
 from pydantic import EmailStr
 
-from schemas.schemas import (CheckAccountResponse, CompleteSignUpRequest,
-                             CompleteSignUpResponse,
-                             ConfirmRegistrationRequest,
-                             ConfirmRegistrationResponse, SignInRequestSchema,
-                             SignUpRequestSchema, SignUpResponseSchema,
-                             TokenInfo, UserUpdateRequest)
+from schemas.schemas import (
+    CheckAccountResponse,
+    CompleteSignUpRequest,
+    CompleteSignUpResponse,
+    ConfirmRegistrationRequest,
+    ConfirmRegistrationResponse,
+    SignInRequestSchema,
+    SignUpRequestSchema,
+    SignUpResponseSchema,
+    TokenInfo,
+    UserUpdateRequest,
+)
 from utils.service import BaseService
 from utils.unit_of_work import transaction_mode
-from utils.utils import (encode_jwt, generate_invite_token, hash_password,
-                         validate_password)
+from utils.utils import (
+    encode_jwt,
+    generate_invite_token,
+    hash_password,
+    validate_password,
+)
 
 
 class AuthService(BaseService):

@@ -1,16 +1,19 @@
-"""Add user_id to position fix
+"""lazy
 
-Revision ID: a6f6045fdb33
-Revises: 45739a8fb9da
-Create Date: 2024-11-28 16:52:28.788620
+Revision ID: 6f2196d55316
+Revises: 74b12b8a69b8
+Create Date: 2024-11-30 15:56:53.711557
 
 """
 
 from typing import Sequence, Union
 
+import sqlalchemy as sa
+from alembic import op
+
 # revision identifiers, used by Alembic.
-revision: str = "a6f6045fdb33"
-down_revision: Union[str, None] = "45739a8fb9da"
+revision: str = "6f2196d55316"
+down_revision: Union[str, None] = "74b12b8a69b8"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

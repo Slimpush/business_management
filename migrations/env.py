@@ -8,26 +8,20 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from src.models.models import Base
 
-# Загрузка переменных окружения
 load_dotenv()
 
-# Читаем конфигурацию из alembic.ini
 config = context.config
 
-# Сборка строки подключения из переменных окружения
 DATABASE_URL = (
     f"postgresql+asyncpg://{os.environ['DB_USER']}:{os.environ['DB_PASS']}@"
     f"{os.environ['DB_HOST']}:{os.environ['DB_PORT']}/{os.environ['DB_NAME']}"
 )
 
-# Указываем строку подключения в конфиг Alembic
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
-# Настройка логирования (если используется файл конфигурации логов)
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Метаинформация моделей
 target_metadata = Base.metadata
 
 
@@ -62,7 +56,7 @@ def do_run_migrations(connection):
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
-        render_as_batch=True,  # Используйте, если нужна поддержка batch mode
+        render_as_batch=True,
     )
 
     with context.begin_transaction():

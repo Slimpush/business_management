@@ -6,11 +6,15 @@ from typing import Any, NoReturn, Optional
 from sqlalchemy.orm import sessionmaker
 
 from database.db import async_session_maker
-from repository.user_repository import (CompanyRepository, InviteRepository,
-                                        PositionRepository,
-                                        RoleAssignmentRepository,
-                                        UserRepository)
-from utils.repository import DepartmentRepository
+from repository.repository import (
+    CompanyRepository,
+    DepartmentRepository,
+    InviteRepository,
+    PositionRepository,
+    RoleAssignmentRepository,
+    TaskRepository,
+    UserRepository,
+)
 
 from .custom_type import AsyncFunc
 
@@ -59,6 +63,7 @@ class UnitOfWork(AbstractUnitOfWork):
         self.invite = InviteRepository(self.session)
         self.department = DepartmentRepository(self.session)
         self.role_assignment = RoleAssignmentRepository(self.session)
+        self.task = TaskRepository(self.session)
 
     async def __aexit__(
         self,

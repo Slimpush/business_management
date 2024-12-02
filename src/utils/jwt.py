@@ -4,7 +4,7 @@ from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 
-from repository.user_repository import UserRepository
+from repository.repository import UserRepository
 
 from .unit_of_work import UnitOfWork
 from .utils import decode_jwt

@@ -1,6 +1,12 @@
+from enum import Enum
 from typing import Optional
 
-from sqlalchemy import Boolean, ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import Boolean, Column
+from sqlalchemy import Enum as SQLAlchemyEnum
+from sqlalchemy import (
+    Float, ForeignKey, Integer,
+    String, Table, UniqueConstraint
+)
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_utils.types.ltree import LtreeType
@@ -37,9 +43,19 @@ class User(Base):
     manager: Mapped[Optional["User"]] = relationship(
         "User", remote_side="User.id", back_populates="subordinates"
     )
-    subordinates: Mapped[list["User"]] = relationship("User", back_populates="manager")
+    subordinates: Mapped[list["User"]] = relationship("User", back_populates="manager", lazy="joined")
     role_assignments: Mapped[list["RoleAssignment"]] = relationship(
         "RoleAssignment", back_populates="user"
+    )
+    observed_tasks: Mapped[list["Task"]] = relationship(
+        "Task",
+        secondary="task_observers",
+        back_populates="observers",
+    )
+    assigned_tasks: Mapped[list["Task"]] = relationship(
+        "Task",
+        secondary="task_executors",
+        back_populates="executors",
     )
 
 
@@ -112,3 +128,52 @@ class RoleAssignment(Base):
     department: Mapped["Department"] = relationship(
         "Department", back_populates="role_assignments"
     )
+
+
+class TaskStatus(str, Enum):
+    NEW = "New"
+    IN_PROGRESS = "In Progress"
+    DONE = "Done"
+    CANCELED = "Canceled"
+
+
+class Task(Base):
+    __tablename__ = "tasks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String, nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    responsible_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    observers: Mapped[list["User"]] = relationship(
+        "User",
+        secondary="task_observers",
+        back_populates="observed_tasks",
+        lazy="joined",
+    )
+    executors: Mapped[list["User"]] = relationship(
+        "User",
+        secondary="task_executors",
+        back_populates="assigned_tasks",
+        lazy="joined",
+    )
+    deadline: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    status: Mapped[str] = mapped_column(
+        SQLAlchemyEnum(TaskStatus), default=TaskStatus.NEW.value
+    )
+    estimated_time: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+
+
+task_observers = Table(
+    "task_observers",
+    Base.metadata,
+    Column("task_id", ForeignKey("tasks.id"), primary_key=True),
+    Column("user_id", ForeignKey("users.id"), primary_key=True),
+)
+
+task_executors = Table(
+    "task_executors",
+    Base.metadata,
+    Column("task_id", ForeignKey("tasks.id"), primary_key=True),
+    Column("user_id", ForeignKey("users.id"), primary_key=True),
+)

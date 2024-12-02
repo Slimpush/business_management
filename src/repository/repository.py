@@ -3,11 +3,19 @@ from typing import Any, List, Optional
 
 from fastapi import HTTPException
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy_utils.types.ltree import Ltree
 
-from models.models import (Company, Department, Invite, Position,
-                           RoleAssignment, User)
-from utils.repository import SQLAlchemyBaseRepository
+from models.models import (
+    Company,
+    Department,
+    Invite,
+    Position,
+    RoleAssignment,
+    Task,
+    User,
+)
+from utils.core_repository import SQLAlchemyBaseRepository
 
 
 class UserRepository(SQLAlchemyBaseRepository):
@@ -15,15 +23,22 @@ class UserRepository(SQLAlchemyBaseRepository):
         super().__init__(session, User)
 
     async def get_all_subordinates(self, user_id: int) -> list:
-        user = await self.get_by_id(user_id)
+        result = await self.session.execute(
+            select(User)
+            .options(selectinload(User.subordinates))
+            .where(User.id == user_id)
+        )
+        user = result.scalar_one_or_none()
+
         if not user:
             raise HTTPException(status_code=404, detail="User not found.")
 
         def collect_subordinates(user):
-            subordinates = user.subordinates
+            all_subordinates = []
             for subordinate in user.subordinates:
-                subordinates.extend(collect_subordinates(subordinate))
-            return subordinates
+                all_subordinates.append(subordinate)
+                all_subordinates.extend(collect_subordinates(subordinate))
+            return all_subordinates
 
         all_subordinates = collect_subordinates(user)
         return [sub.dict() for sub in all_subordinates]
@@ -137,3 +152,8 @@ class RoleAssignmentRepository(SQLAlchemyBaseRepository):
         )
         self.session.add(new_assignment)
         await self.session.commit()
+
+
+class TaskRepository(SQLAlchemyBaseRepository):
+    def __init__(self, session):
+        super().__init__(session, Task)
