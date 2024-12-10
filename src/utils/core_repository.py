@@ -78,7 +78,7 @@ class SQLAlchemyBaseRepository(AbstractRepository):
     async def get_by_query_one_or_none(self, **kwargs) -> Optional[Any]:
         query = select(self.model).filter_by(**kwargs)
         result: Result = await self.session.execute(query)
-        return result.scalar_one_or_none()
+        return result.unique().scalar_one_or_none()
 
     async def get_by_query_all(self, **kwargs) -> Sequence[Any]:
         query = select(self.model).filter_by(**kwargs)

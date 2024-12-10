@@ -7,7 +7,7 @@ from sqlalchemy import (
     Float, ForeignKey, Integer,
     String, Table, UniqueConstraint
 )
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy_utils.types.ltree import LtreeType
 

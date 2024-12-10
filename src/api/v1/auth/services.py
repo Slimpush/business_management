@@ -14,6 +14,7 @@ from schemas.schemas import (
     SignUpRequestSchema,
     SignUpResponseSchema,
     TokenInfo,
+    UserToken,
     UserUpdateRequest,
 )
 from utils.service import BaseService
@@ -185,12 +186,18 @@ class AuthService(BaseService):
         }
 
     @transaction_mode
-    async def update_user(self, user_id: int, schema: UserUpdateRequest) -> dict:
+    async def update_user(
+        self,
+        user_id: int,
+        schema: UserUpdateRequest,
+        current_user: UserToken,
+    ) -> dict:
         user = await self.uow.user.get_by_query_one_or_none(id=user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found.")
-
-        updates = schema.dict(exclude_unset=True)
+        if user_id != current_user.user_id and not current_user.is_admin:
+            raise HTTPException(status_code=403, detail="Permission denied.")
+        updates = schema.model_dump(exclude_unset=True)
         updates.pop("position_id", None)
         if not updates:
             raise HTTPException(status_code=400, detail="No fields to update.")
@@ -202,10 +209,17 @@ class AuthService(BaseService):
         }
 
     @transaction_mode
-    async def update_email(self, user_id: int, new_email: EmailStr) -> dict:
+    async def update_email(
+        self,
+        user_id: int,
+        new_email: EmailStr,
+        current_user: UserToken,
+    ) -> dict:
         existing_user = await self.uow.user.get_by_query_one_or_none(email=new_email)
         if existing_user:
             raise HTTPException(status_code=400, detail="Email already in use.")
+        if user_id != current_user.user_id and not current_user.is_admin:
+            raise HTTPException(status_code=403, detail="Permission denied.")
 
         await self.uow.user.update_one_by_id(obj_id=user_id, email=new_email)
         return {"message": "Email updated successfully."}
@@ -217,6 +231,7 @@ class AuthService(BaseService):
         first_name: str,
         last_name: str,
         company_id: int,
+        current_user: UserToken,
         position_id: Optional[int] = None,
     ) -> dict:
         user_exists = await self.uow.user.get_by_query_one_or_none(email=email)

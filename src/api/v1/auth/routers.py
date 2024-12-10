@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import EmailStr
 
 from schemas.schemas import (
@@ -66,12 +66,13 @@ async def update_user(
     user_id: int,
     schema: UserUpdateRequest,
     service: AuthService = Depends(),
-    current_user: UserToken = Depends(get_current_user),
+    current_user: UserToken = Depends(get_current_user)
 ) -> dict:
-    if user_id != current_user.user_id and not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Permission denied.")
-
-    return await service.update_user(user_id=user_id, schema=schema)
+    return await service.update_user(
+        user_id=user_id,
+        schema=schema,
+        current_user=current_user
+    )
 
 
 @router.patch("/api/v1/user/{user_id}/update-email")
@@ -79,11 +80,13 @@ async def update_email(
     user_id: int,
     new_email: EmailStr,
     service: AuthService = Depends(),
-    current_user: UserToken = Depends(get_current_user),
+    current_user: UserToken = Depends(get_current_user)
 ) -> dict:
-    if user_id != current_user.user_id and not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Permission denied.")
-    return await service.update_email(user_id=user_id, new_email=new_email)
+    return await service.update_email(
+        user_id=user_id,
+        new_email=new_email,
+        current_user=current_user
+    )
 
 
 @router.post("/api/v1/create-employee/")
@@ -95,15 +98,13 @@ async def create_employee(
     current_user: UserToken = Depends(get_current_user),
     service: AuthService = Depends(),
 ) -> dict:
-    if not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Permission denied.")
-
     return await service.create_employee(
         email=account,
         first_name=first_name,
         last_name=last_name,
         company_id=current_user.company_id,
         position_id=position_id,
+        current_user=current_user,
     )
 
 

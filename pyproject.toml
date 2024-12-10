@@ -20,7 +20,12 @@ aiosmtplib = "^3.0.2"
 asyncpg = "^0.30.0"
 alembic = "^1.14.0"
 pyjwt = "^2.10.0"
+pytest = "^8.3.4"
+httpx = "^0.28.1"
+trio = "^0.27.0"
 
+[tool.pytest.ini_options]
+pythonpath = ["src"]
 
 [build-system]
 requires = ["poetry-core"]

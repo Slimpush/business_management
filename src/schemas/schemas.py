@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, constr, field_validator
 
 from models.models import TaskStatus
 
@@ -26,6 +26,14 @@ class SignInRequestSchema(BaseModel):
     password: str
 
 
+class SignUpData(BaseModel):
+    account: EmailStr
+    token: str
+    first_name: str
+    last_name: str
+    password: constr(min_length=8)
+
+
 class TokenInfo(BaseModel):
     access_token: str
     token_type: str
@@ -39,7 +47,6 @@ class UserToken(BaseModel):
 
 class CompleteSignUpRequest(BaseModel):
     account: EmailStr
-    invite_token: str
     first_name: str
     last_name: str
     company_name: str
