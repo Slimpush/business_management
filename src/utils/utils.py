@@ -100,3 +100,7 @@ async def get_current_user(
         raise HTTPException(status_code=403, detail="Account is inactive")
 
     return UserToken(user_id=user_id, company_id=company_id, is_admin=is_admin)
+
+
+
+

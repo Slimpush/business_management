@@ -98,7 +98,7 @@ class Department(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    path: Mapped[str] = mapped_column(LtreeType, index=True)
+    path: Mapped[str] = mapped_column(LtreeType, index=True, nullable=True)
     company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"))
     manager_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("users.id"), nullable=True

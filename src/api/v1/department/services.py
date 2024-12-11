@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from schemas.schemas import UserToken
 from utils.service import BaseService
 from utils.unit_of_work import transaction_mode
+from sqlalchemy_utils.types.ltree import Ltree
 
 
 class OrganizationService(BaseService):
@@ -15,21 +16,20 @@ class OrganizationService(BaseService):
         company_id: int,
         current_user: UserToken,
         parent_id: Optional[int] = None,
-    ):
+    ) -> dict:
         if not current_user.is_admin:
             raise HTTPException(status_code=403, detail="Permission denied")
-        parent_path = None
-        if parent_id:
-            parent = await self.uow.department.get_by_id(parent_id)
-            if not parent:
-                raise HTTPException(
-                    status_code=404, detail="Parent department not found"
-                )
-            parent_path = parent.path
 
-        await self.uow.department.add_one(
-            name=name, company_id=company_id, parent_path=parent_path
+        department_id = await self.uow.department.add_one(
+            name=name, company_id=company_id, parent_id=parent_id
         )
+        visualized_path = await self.uow.department.get_visualized_path(department_id)
+
+        return {
+            "message": "Department created successfully",
+            "department_id": department_id,
+            "visualized_path": visualized_path,
+        }
 
     @transaction_mode
     async def get_descendants(
@@ -39,7 +39,8 @@ class OrganizationService(BaseService):
     ) -> list:
         if not current_user.is_admin:
             raise HTTPException(status_code=403, detail="Permission denied")
-        return await self.uow.department.get_descendants(department_id)
+        descendants = await self.uow.department.get_descendants_with_names(department_id)
+        return descendants
 
     @transaction_mode
     async def get_ancestors(
@@ -49,7 +50,8 @@ class OrganizationService(BaseService):
     ) -> list:
         if not current_user.is_admin:
             raise HTTPException(status_code=403, detail="Permission denied")
-        return await self.uow.department.get_ancestors(department_id)
+        ancestors = await self.uow.department.get_ancestors_with_names(department_id)
+        return ancestors
 
     @transaction_mode
     async def move_department(
@@ -69,7 +71,12 @@ class OrganizationService(BaseService):
         await self.uow.department.move_department_with_descendants(
             department_id, new_parent.path
         )
-        return {"message": "Department moved successfully"}
+        visualized_path = await self.uow.department.get_visualized_path(department_id)
+
+        return {
+            "message": "Department moved successfully",
+            "new_visualized_path": visualized_path,
+        }
 
     @transaction_mode
     async def update_department(
@@ -81,13 +88,39 @@ class OrganizationService(BaseService):
     ) -> dict:
         if not current_user.is_admin:
             raise HTTPException(status_code=403, detail="Permission denied")
-        updates = {"name": name, "parent_id": parent_id}
-        updates = {k: v for k, v in updates.items() if v is not None}
 
-        if not updates:
-            raise HTTPException(status_code=400, detail="No fields to update.")
+        department = await self.uow.department.get_by_id(department_id)
+        if not department:
+            raise HTTPException(status_code=404, detail="Department not found")
 
-        await self.uow.department.update_one_by_id(obj_id=department_id, **updates)
+        updates = {}
+        if name is not None:
+            updates["name"] = name
+
+        old_path = department.path
+
+        if parent_id is not None:
+            new_parent = await self.uow.department.get_by_id(parent_id)
+            if not new_parent:
+                raise HTTPException(status_code=404, detail="New parent department not found")
+            if not new_parent.path:
+                raise HTTPException(status_code=400, detail="New parent path is not set")
+
+            new_path = f"{new_parent.path}.{department.id}"
+            updates["path"] = new_path
+
+            department.path = Ltree(new_path)
+            self.uow.department.session.add(department)
+
+            descendants = await self.uow.department.get_descendants(department_id)
+            for descendant in descendants:
+                relative_path = descendant.path[len(old_path) + 1:]
+                descendant.path = Ltree(f"{new_path}.{relative_path}")
+                self.uow.department.session.add(descendant)
+
+        if updates:
+            await self.uow.department.update_one_by_id(obj_id=department_id, **updates)
+        await self.uow.department.session.commit()
         return {"message": "Department updated successfully."}
 
     @transaction_mode
@@ -103,7 +136,7 @@ class OrganizationService(BaseService):
         if not department:
             raise HTTPException(status_code=404, detail="Department not found")
 
-        await self.uow.department.delete_by_query(id=department_id)
+        await self.uow.department.delete_by_query(department_id=department_id)
         return {"message": "Department deleted successfully"}
 
     @transaction_mode
